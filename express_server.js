@@ -78,9 +78,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //show the update form to edit longURL
 app.post("/urls/:shortURL/update", (req, res) => {
-  // 1. extract the  id from the url
-  // 2. get longURL from the db
-  // 3. display the update form
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
@@ -89,7 +86,7 @@ app.post("/urls/:shortURL/update", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// PUT (POST) to update the quote in the db
+// PUT (POST) to update the longURL in the db
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
 
