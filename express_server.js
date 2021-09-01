@@ -40,7 +40,10 @@ app.get("/hello", (req, res) => {
 
 //add ejs to template
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase, username: "" };
+  if (req.cookies && req.cookies["username"]) {
+    templateVars.username = req.cookies["username"];
+  }
   res.render("urls_index", templateVars);
 });
 
@@ -96,6 +99,20 @@ app.post("/urls/:shortURL", (req, res) => {
   // Update the longURL in the db
   urlDatabase[shortURL] = updatedLongURL;
 
+  res.redirect("/urls");
+});
+
+// Login POST
+app.post("/login", (req, res) => {
+  const username = req.body.username;
+  res.cookie("username", username);
+  res.redirect("/urls");
+});
+
+// Logout POST
+app.post("/logout", (req, res) => {
+  //console.log(">>>", res.cookie["username"]);
+  res.clearCookie("username");
   res.redirect("/urls");
 });
 

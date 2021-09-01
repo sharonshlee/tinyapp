@@ -18,5 +18,27 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+    <div class="d-flex flex-row justify-content-end">
+      <% if(username === "" || username === undefined) { %>
+      <form method="POST" action="/login">
+        <div class="d-flex">
+          <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            class="form-control mr-2"
+          />
+          <button type="submit" class="btn btn-outline-dark">Login</button>
+        </div>
+      </form>
+      <% } else { %>
+      <form method="POST" action="/logout">
+        <div class="d-flex">
+          <label>Logged In As: <%= username %></label>
+          <button type="submit" class="btn btn-outline-dark">Logout</button>
+        </div>
+      </form>
+      <% } %>
+    </div>
   </nav>
 </header>
