@@ -15,12 +15,14 @@
       crossorigin="anonymous"
     />
 
-    <title>New URL - TinyApp Example</title>
+    <title>TinyApp | Register</title>
   </head>
 
   <body>
+    <%- include('partials/_header') %>
+
     <main style="margin: 1em">
-      <h3>Create TinyURL</h3>
+      <h3>Register New User</h3>
       <form class="form-inline" action="/register" method="POST">
         <div class="form-group mb-2">
           <label for="email">Email:</label>

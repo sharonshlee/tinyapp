@@ -10,6 +10,27 @@ app.use(cookieParser());
 
 app.set("view engine", "ejs");
 
+//------------------GLOBAL VARIABLES------------------//
+const urlDatabase = {
+  b2xVn2: "http://www.lighthouselabs.ca",
+  "9sm5xK": "http://www.google.com",
+};
+
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk",
+  },
+};
+//--------------END GLOBAL VARIABLES--------------------//
+
+//-----------------FUNCTIONS----------------------------//
 function generateRandomString() {
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -22,10 +43,32 @@ function generateRandomString() {
   return result;
 }
 
-const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+// return the user obj containing all the info if email is found
+// otherwise return false
+const findUserByEmail = (email, users) => {
+  // return Object.keys(usersDb).find(key => usersDb[key].email === email)
+
+  for (let userId in users) {
+    if (users[userId].email === email) {
+      return users[userId]; // return the user object
+    }
+  }
+
+  return false;
 };
+
+const authenticateUser = (email, password, users) => {
+  // contained the user info if found or false if not
+  const userFound = findUserByEmail(email, users);
+  console.log(userFound, email, password);
+  if (userFound && userFound.password === password) {
+    return userFound;
+  }
+  return false;
+};
+//----------------END FUNCTIONS------------------------//
+
+//----------------------GETS--------------------------//
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -39,14 +82,14 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-//routes should be ordered from most specific to least specific
+//routes should be ordered from most specific to least specific???
 
 //add ejs to template
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: "" };
-  if (req.cookies && req.cookies["username"]) {
-    templateVars.username = req.cookies["username"];
-  }
+  const { user_id } = req.cookies;
+  console.log(user_id);
+  const templateVars = { urls: urlDatabase, user: users[user_id] };
+
   res.render("urls_index", templateVars);
 });
 
@@ -69,6 +112,7 @@ app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
+//-----------------END GETS----------------------//
 
 app.post("/urls", (req, res) => {
   const { longURL } = req.body;
@@ -82,6 +126,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls");
 });
 
+//-----------------UPDATE----------------//
 //show the update form to edit longURL
 app.post("/urls/:shortURL/update", (req, res) => {
   const templateVars = {
@@ -104,24 +149,66 @@ app.post("/urls/:shortURL", (req, res) => {
 
   res.redirect("/urls");
 });
+//------------END UPDATE-------------------//
 
-// Login POST
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect("/urls");
+//------------LOGIN/LOGOUT----------------//
+//GET: Display login form
+app.get("/login", (req, res) => {
+  //res.redirect("/urls"); ???????
+  res.render("urls_index");
 });
 
-// Logout POST
+//POST: Handle the login form
+app.post("/login", (req, res) => {
+  const { username, email, password } = req.body;
+
+  // get the user object (authenticated) or false if not
+  const user = authenticateUser(username, password, users);
+
+  if (user) {
+    // log the user in
+    res.cookie("user_id", user.id);
+    res.cookie("user_name", username);
+    res.redirect("/urls");
+  } else {
+    res.send("Sorry, wrong credentials!");
+  }
+});
+
+//POST: Logout and delete cookies
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
+//-------------END LOGIN/LOGOUT------------//
 
-//register GET
+//---------------REGISTER-----------------//
+//GET: Display register form
 app.get("/register", (req, res) => {
   res.render("urls_register");
 });
+
+//POST: Handle Registration Form
+app.post("/register", (req, res) => {
+  const userId = generateRandomString();
+  const { email, password } = req.body;
+
+  const userFound = findUserByEmail(email, users);
+
+  //handle registration errors:
+  //email, passwords => "",
+  //user's email exist in DB
+  if (!email || !password || userFound) {
+    return res.send("Error 400.");
+  }
+
+  users[userId] = { userId, email, password };
+  res.cookie("user_id", userId);
+
+  res.redirect("/urls");
+});
+//-------------END REGISTER---------------//
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
