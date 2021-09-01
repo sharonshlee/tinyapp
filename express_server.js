@@ -1,11 +1,11 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 8080; // default port 8080
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 
+const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 
 app.set("view engine", "ejs");
@@ -50,7 +50,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-//get route to show form
+//get route to show form for add new
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -114,9 +114,13 @@ app.post("/login", (req, res) => {
 
 // Logout POST
 app.post("/logout", (req, res) => {
-  //console.log(">>>", res.cookie["username"]);
   res.clearCookie("username");
   res.redirect("/urls");
+});
+
+//register GET
+app.get("/register", (req, res) => {
+  res.render("urls_register");
 });
 
 app.listen(PORT, () => {
