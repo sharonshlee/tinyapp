@@ -60,7 +60,7 @@ const findUserByEmail = (email, users) => {
 const authenticateUser = (email, password, users) => {
   // contained the user info if found or false if not
   const userFound = findUserByEmail(email, users);
-  console.log(userFound, email, password);
+
   if (userFound && userFound.password === password) {
     return userFound;
   }
@@ -87,7 +87,6 @@ app.get("/hello", (req, res) => {
 //add ejs to template
 app.get("/urls", (req, res) => {
   const { user_id } = req.cookies;
-  console.log(user_id);
   const templateVars = { urls: urlDatabase, user: users[user_id] };
 
   res.render("urls_index", templateVars);
@@ -155,7 +154,8 @@ app.post("/urls/:shortURL", (req, res) => {
 //GET: Display login form
 app.get("/login", (req, res) => {
   //res.redirect("/urls"); ???????
-  res.render("urls_index");
+  //res.render("urls_index");
+  res.render("urls_login");
 });
 
 //POST: Handle the login form
@@ -210,6 +210,4 @@ app.post("/register", (req, res) => {
 });
 //-------------END REGISTER---------------//
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
+app.listen(PORT, () => {});
