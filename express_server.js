@@ -1,13 +1,13 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
+
 const app = express();
 const PORT = 8080; // default port 8080
 
-const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
-
-const cookieParser = require("cookie-parser");
 app.use(cookieParser());
-
 app.set("view engine", "ejs");
 
 //------------------GLOBAL VARIABLES------------------//
@@ -21,19 +21,20 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur",
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10),
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk",
+    password: bcrypt.hashSync("dishwasher-funk", 10),
   },
   "13qeqwe": {
     id: "13qeqwe",
     email: "123@123.com",
-    password: "123",
+    password: bcrypt.hashSync("123", 10),
   },
 };
+
 //--------------END GLOBAL VARIABLES--------------------//
 
 //-----------------FUNCTIONS----------------------------//
@@ -52,14 +53,14 @@ function generateRandomString() {
 // return the user obj containing all the info if email is found
 // otherwise return false
 const findUserByEmail = (email, users) => {
-  // return Object.keys(usersDb).find(key => usersDb[key].email === email)
+  // const currentUser = users[email];
+  // return currentUser;
 
   for (let userId in users) {
     if (users[userId].email === email) {
       return users[userId]; // return the user object
     }
   }
-
   return false;
 };
 
@@ -67,7 +68,7 @@ const authenticateUser = (email, password, users) => {
   // contained the user info if found or false if not
   const userFound = findUserByEmail(email, users);
 
-  if (userFound && userFound.password === password) {
+  if (userFound && bcrypt.compareSync(password, userFound.password)) {
     return userFound;
   }
   return false;
@@ -77,11 +78,9 @@ const authenticateUser = (email, password, users) => {
 const getUrls = (user_id, urlDatabase) => {
   const urls = {};
   for (const shortURL in urlDatabase) {
-    if (Object.hasOwnProperty.call(urlDatabase, shortURL)) {
-      const element = urlDatabase[shortURL];
-      if (element.userID === user_id) {
-        urls[shortURL] = element.longURL;
-      }
+    const element = urlDatabase[shortURL];
+    if (element.userID === user_id) {
+      urls[shortURL] = element.longURL;
     }
   }
   return urls;
@@ -193,26 +192,24 @@ app.post("/urls/:shortURL", (req, res) => {
 //------------LOGIN/LOGOUT----------------//
 //GET: Display login form
 app.get("/login", (req, res) => {
-  //res.redirect("/urls"); ???????
-  //res.render("urls_index");
   res.render("urls_login");
 });
 
 //POST: Handle the login form
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  // get the user object (authenticated) or false if not
 
+  // get the user object (authenticated) or false if not
   const user = authenticateUser(email, password, users);
 
-  if (user) {
-    // log the user in
-    res.cookie("user_id", user.id);
-    res.redirect("/urls");
-  } else {
+  if (!user) {
     res.statusCode = 403; //email cant be found
-    res.send(res.statusCode);
+    return res.send(res.statusCode);
   }
+
+  // log the user in
+  res.cookie("user_id", user.id);
+  return res.redirect("/urls");
 });
 
 //POST: Logout and delete cookies
@@ -242,7 +239,11 @@ app.post("/register", (req, res) => {
     return res.send("Error 400.");
   }
 
-  users[id] = { id, email, password };
+  //Use bcrypt When Storing Passwords
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  //users[id] = { id, email, password };
+  users[id] = { id, email, hashedPassword };
   res.cookie("user_id", id);
 
   res.redirect("/urls");
