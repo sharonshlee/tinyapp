@@ -23,22 +23,26 @@
 
     <main style="margin: 1em">
       <h3>Login</h3>
-      <form class="form-inline" action="/login" method="POST">
-        <div class="form-group mb-2">
-          <label for="email">Email:</label>
+      <form action="/login" method="POST">
+        <div class="form-group w-50">
+          <label for="email">Email Address</label>
           <input
             class="form-control"
             type="email"
             name="email"
-            style="width: 300px; margin: 1em"
+            placeholder="Email Address"
           />
-          <label for="password">Password:</label>
+        </div>
+        <div class="form-group w-50">
+          <label for="password">Password</label>
           <input
             class="form-control"
             type="password"
             name="password"
-            style="width: 300px; margin: 1em"
+            placeholder="Password"
           />
+        </div>
+        <div class="form-group">
           <button type="submit" class="btn btn-primary">Login</button>
         </div>
       </form>

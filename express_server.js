@@ -94,14 +94,18 @@ app.get("/urls", (req, res) => {
 
 //get route to show form for add new
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const { user_id } = req.cookies;
+  const templateVars = { user: users[user_id] };
+  res.render("urls_new", templateVars);
 });
 
 //Add a Second Route and Template
 app.get("/urls/:shortURL", (req, res) => {
+  const { user_id } = req.cookies;
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
+    user: users[user_id],
   };
 
   res.render("urls_show", templateVars);
@@ -128,9 +132,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //-----------------UPDATE----------------//
 //show the update form to edit longURL
 app.post("/urls/:shortURL/update", (req, res) => {
+  const { user_id } = req.cookies;
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
+    user: users[user_id],
   };
 
   res.render("urls_show", templateVars);
@@ -160,26 +166,25 @@ app.get("/login", (req, res) => {
 
 //POST: Handle the login form
 app.post("/login", (req, res) => {
-  const { username, email, password } = req.body;
-
+  const { email, password } = req.body;
   // get the user object (authenticated) or false if not
-  const user = authenticateUser(username, password, users);
+
+  const user = authenticateUser(email, password, users);
 
   if (user) {
     // log the user in
     res.cookie("user_id", user.id);
-    res.cookie("user_name", username);
     res.redirect("/urls");
   } else {
-    res.send("Sorry, wrong credentials!");
+    res.statusCode = 403; //email cant be found
+    res.send(res.statusCode);
   }
 });
 
 //POST: Logout and delete cookies
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 //-------------END LOGIN/LOGOUT------------//
 
@@ -191,7 +196,7 @@ app.get("/register", (req, res) => {
 
 //POST: Handle Registration Form
 app.post("/register", (req, res) => {
-  const userId = generateRandomString();
+  const id = generateRandomString();
   const { email, password } = req.body;
 
   const userFound = findUserByEmail(email, users);
@@ -203,8 +208,8 @@ app.post("/register", (req, res) => {
     return res.send("Error 400.");
   }
 
-  users[userId] = { userId, email, password };
-  res.cookie("user_id", userId);
+  users[id] = { id, email, password };
+  res.cookie("user_id", id);
 
   res.redirect("/urls");
 });
