@@ -12,8 +12,9 @@ app.set("view engine", "ejs");
 
 //------------------GLOBAL VARIABLES------------------//
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b2xVn2: { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID" },
+  adsudy: { longURL: "http://www.facebook.com", userID: "13qeqwe" },
 };
 
 const users = {
@@ -26,6 +27,11 @@ const users = {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "dishwasher-funk",
+  },
+  "13qeqwe": {
+    id: "13qeqwe",
+    email: "123@123.com",
+    password: "123",
   },
 };
 //--------------END GLOBAL VARIABLES--------------------//
@@ -66,6 +72,20 @@ const authenticateUser = (email, password, users) => {
   }
   return false;
 };
+
+// Return URLs for the specific user only
+const getUrls = (user_id, urlDatabase) => {
+  const urls = {};
+  for (const shortURL in urlDatabase) {
+    if (Object.hasOwnProperty.call(urlDatabase, shortURL)) {
+      const element = urlDatabase[shortURL];
+      if (element.userID === user_id) {
+        urls[shortURL] = element.longURL;
+      }
+    }
+  }
+  return urls;
+};
 //----------------END FUNCTIONS------------------------//
 
 //----------------------GETS--------------------------//
@@ -87,24 +107,35 @@ app.get("/hello", (req, res) => {
 //add ejs to template
 app.get("/urls", (req, res) => {
   const { user_id } = req.cookies;
-  const templateVars = { urls: urlDatabase, user: users[user_id] };
 
-  res.render("urls_index", templateVars);
+  if (user_id) {
+    const urls = getUrls(user_id, urlDatabase);
+    const templateVars = { urls, user: users[user_id] };
+    return res.render("urls_index", templateVars);
+  }
+
+  res.redirect("/login");
 });
 
 //get route to show form for add new
 app.get("/urls/new", (req, res) => {
   const { user_id } = req.cookies;
-  const templateVars = { user: users[user_id] };
-  res.render("urls_new", templateVars);
+
+  if (user_id) {
+    const templateVars = { user: users[user_id] };
+    return res.render("urls_new", templateVars);
+  }
+
+  res.redirect("/login");
 });
 
 //Add a Second Route and Template
 app.get("/urls/:shortURL", (req, res) => {
   const { user_id } = req.cookies;
+  const urls = getUrls(user_id, urlDatabase);
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urls[req.params.shortURL],
     user: users[user_id],
   };
 
@@ -112,15 +143,19 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    return res.redirect(longURL);
+  }
+  res.send("URL not found");
 });
 //-----------------END GETS----------------------//
 
 app.post("/urls", (req, res) => {
   const { longURL } = req.body;
+  const { user_id } = req.cookies;
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = { longURL, userID: user_id };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -133,9 +168,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //show the update form to edit longURL
 app.post("/urls/:shortURL/update", (req, res) => {
   const { user_id } = req.cookies;
+  const urls = getUrls(user_id, urlDatabase);
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urls[req.params.shortURL],
     user: users[user_id],
   };
 
@@ -147,10 +183,8 @@ app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
 
   // Extract the longURL from the form input > name = "longURL"
-  const updatedLongURL = req.body.longURL;
-
   // Update the longURL in the db
-  urlDatabase[shortURL] = updatedLongURL;
+  urlDatabase[shortURL].longURL = req.body.longURL;
 
   res.redirect("/urls");
 });
