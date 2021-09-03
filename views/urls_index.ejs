@@ -17,7 +17,7 @@
     <title>TinyApp | My URLs</title>
   </head>
   <body>
-    <%- include('partials/_header') %> <% if (locals.user) { %>
+    <%- include('partials/_header') %>
     <main style="margin: 1em">
       <h3>My URLs</h3>
       <table class="table">
@@ -35,7 +35,7 @@
             <td><%= url %></td>
             <td><%= urls[url] %></td>
             <td>
-              <form method="POST" action="/urls/<%= url %>/update">
+              <form method="GET" action="/urls/<%= url %>">
                 <button type="submit" class="btn btn-outline-primary">
                   Edit
                 </button>
@@ -53,7 +53,6 @@
         </tbody>
       </table>
     </main>
-    <% } %>
     <!-- Bootstrap JS -->
     <script
       src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
