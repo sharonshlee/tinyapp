@@ -61,17 +61,6 @@ const getUserUrls = (user_id, urlDatabase) => {
   }
   return urls;
 };
-
-// Return URLs for the specific user only
-const getAllUrls = (urlDatabase) => {
-  const urls = {};
-  for (const shortURL in urlDatabase) {
-    const element = urlDatabase[shortURL];
-    urls[shortURL] = element.longURL;
-  }
-  return urls;
-};
-
 //----------------END FUNCTIONS------------------------//
 
 //----------------------GETS--------------------------//
@@ -198,12 +187,12 @@ app.post("/urls/:shortURL", (req, res) => {
     res.send(loginErrorMsg);
     return;
   }
+  const shortURL = req.params.shortURL;
   const url = urlDatabase[shortURL];
   if (url.userID !== user.id) {
     res.send("Not your URL.");
     return;
   }
-  const shortURL = req.params.shortURL;
 
   // Extract the longURL from the form input > name = "longURL"
   // Update the longURL in the db
@@ -238,7 +227,6 @@ app.post("/login", (req, res) => {
 
 //POST: Logout and delete cookies
 app.post("/logout", (req, res) => {
-  //res.clearCookie("user_id");
   req.session = null;
   res.redirect("/login");
 });
@@ -256,14 +244,15 @@ app.get("/register", (req, res) => {
 
 //POST: Handle Registration Form
 app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+
   //handle registration errors:
   //email, passwords => "",
   if (!email || !password) {
     return res.send("Email/Password cannot be empty.");
   }
-  const id = generateRandomString();
-  const { email, password } = req.body;
 
+  const id = generateRandomString();
   const userFound = getUserByEmail(email, users);
 
   //user's email exist in DB
