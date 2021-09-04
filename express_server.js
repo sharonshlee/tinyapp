@@ -65,15 +65,16 @@ const getUserUrls = (user_id, urlDatabase) => {
 
 //----------------------GETS--------------------------//
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const user_id = req.session.user_id;
+  if (!user_id) {
+    res.redirect("/login");
+    return;
+  }
+  res.redirect("/urls");
 });
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.get("/urls", (req, res) => {
@@ -109,12 +110,17 @@ app.get("/urls/:shortURL", (req, res) => {
     return;
   }
   const shortURL = req.params.shortURL;
-  const urls = getUserUrls(user_id, urlDatabase);
-  const url = urls[shortURL];
+
+  const url = urlDatabase[shortURL];
   if (!url) {
     res.send("URL does not exist.");
     return;
   }
+  if (url.userID !== req.session.user_id) {
+    res.send("Not your Short URL.");
+    return;
+  }
+  const urls = getUserUrls(user_id, urlDatabase);
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urls[req.params.shortURL],
@@ -212,6 +218,9 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.send("Email/Password cannot be empty.");
+  }
   // get the user object (authenticated) or false if not
   const user = authenticateUser(email, password, users);
 
@@ -263,7 +272,7 @@ app.post("/register", (req, res) => {
   //Use bcrypt When Storing Passwords
   const hashedPassword = bcrypt.hashSync(password, 10);
 
-  users[id] = { id, email, hashedPassword };
+  users[id] = { id, email, password: hashedPassword };
   req.session.user_id = id;
 
   res.redirect("/urls");
