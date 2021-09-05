@@ -23,6 +23,7 @@ app.use(
 
 //------------------GLOBAL VARIABLES------------------//
 const loginErrorMsg = `Please login <a href='/login'>here</a> to access this page.`;
+
 const urlDatabase = {
   b2xVn2: { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
   "9sm5xK": { longURL: "http://www.google.com", userID: "user2RandomID" },
@@ -47,6 +48,7 @@ const users = {
   },
 };
 
+const visitors = {};
 //--------------END GLOBAL VARIABLES--------------------//
 
 //-----------------FUNCTIONS----------------------------//
@@ -97,38 +99,24 @@ app.get("/urls/new", (req, res) => {
   res.redirect("/login");
 });
 
-//Add a Second Route and Template
-app.get("/urls/:shortURL", (req, res) => {
-  const user_id = req.session.user_id;
-  const user = users[user_id];
-  if (!user) {
-    res.send(loginErrorMsg);
-    return;
-  }
-  const shortURL = req.params.shortURL;
-
-  const url = urlDatabase[shortURL];
-  if (!url) {
-    res.send("URL does not exist.");
-    return;
-  }
-  if (url.userID !== req.session.user_id) {
-    res.send("Not your Short URL.");
-    return;
-  }
-  const urls = getUserUrls(user_id, urlDatabase);
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urls[req.params.shortURL],
-    user: users[user_id],
-  };
-
-  res.render("urls_show", templateVars);
-});
-
+// Strech: Add analytics
 app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL]) {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
+  const { shortURL } = req.params;
+  if (urlDatabase[shortURL]) {
+    let visitorId = req.session.visitor_id;
+    if (!visitors[shortURL]) {
+      visitors[shortURL] = {
+        totalUrlVisits: 0,
+        visits: [], // store visitor object
+      };
+    }
+    visitors[shortURL].visits.push({
+      visitorId,
+      timestamp: new Date().toISOString(),
+    });
+    visitors[shortURL].totalUrlVisits++;
+
+    const longURL = urlDatabase[shortURL].longURL;
     return res.redirect(longURL);
   }
   res.send("URL not found");
@@ -172,13 +160,41 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 //show the update form to edit longURL
 app.get("/urls/:shortURL", (req, res) => {
   const user_id = req.session.user_id;
-  const urls = getUserUrls(user_id, urlDatabase);
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urls[req.params.shortURL],
-    user: users[user_id],
-  };
+  const user = users[user_id];
+  if (!user) {
+    res.send(loginErrorMsg);
+    return;
+  }
+  const { shortURL } = req.params;
 
+  const url = urlDatabase[shortURL];
+  if (!url) {
+    res.send("URL does not exist.");
+    return;
+  }
+  if (url.userID !== req.session.user_id) {
+    res.send("Not your Short URL.");
+    return;
+  }
+  const urls = getUserUrls(user_id, urlDatabase);
+  if (!visitors[shortURL]) {
+    visitors[shortURL] = { totalUrlVisits: 0, visits: [] };
+  }
+  const uniqueVisits = [];
+
+  for (const visit of visitors[shortURL].visits) {
+    if (!uniqueVisits.includes(visit.visitorId)) {
+      uniqueVisits.push(visit.visitorId);
+    }
+  }
+  const templateVars = {
+    shortURL,
+    longURL: urls[shortURL],
+    user: users[user_id],
+    visits: visitors[shortURL].visits,
+    totalUniqueVisits: uniqueVisits.length,
+    totalUrlVisits: visitors[shortURL].totalUrlVisits,
+  };
   res.render("urls_show", templateVars);
 });
 

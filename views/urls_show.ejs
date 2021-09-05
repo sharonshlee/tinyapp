@@ -13,7 +13,7 @@
 
   <body>
     <%- include('partials/_header') %>
-
+    
     <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
@@ -42,6 +42,14 @@
           </form>
         </p>
       </div>
+        <div class="h5 m-3">Total Visitors:  <%= totalUrlVisits %></div>
+        <div class="h5 m-3">Unique Visitors: <%= totalUniqueVisits %></div>
+        <div class="h5 m-3">List of visits:</div>
+        <ul class="list-group">
+        <% for(const visit of visits) { %>
+          <li class=""><%= visit.visitorId %> - <%= visit.timestamp %></li>
+        <% } %>
+        </ul>
     </div>
     <!-- Bootstrap JS -->
     <script
