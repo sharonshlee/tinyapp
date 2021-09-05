@@ -73,10 +73,6 @@ app.get("/", (req, res) => {
   res.redirect("/urls");
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
 app.get("/urls", (req, res) => {
   const { user_id } = req.session;
 
